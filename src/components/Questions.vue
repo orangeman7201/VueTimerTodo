@@ -1,62 +1,41 @@
 <template>
-<div style="padding-left: 500px">
-  
-    <input type="radio" id="all" value="all" v-model="radioState">全て
-    <input type="radio" id="working" value="working" v-model="radioState">作業中
-    <input type="radio" id="finish" value="finish" v-model="radioState">完了
+  <div style="padding-left: 500px">
+    <h1>何かやるときは目標時間を設定してから</h1>
+    <ul v-for="(todo, index) in inputTodos" :key="todo.task">
 
-    <div class="circle"><div class="circle-inner">
-      <div v-if="radioState === 'all'">
-      <ul v-for="(todo, index) in inputTodos" :key="todo.task">
-        <li>{{todo.task}}</li>
-        <li>
-            {{ ((todo.time / 1000) - (todo.time / 1000  % 60)) / 60 }}分{{ todo.time / 1000 % 60 }}秒
-        </li>
-        <li>
-          <button v-if="inputTodos[index].timer === 'stop'" @click="timerStart(index)">開始</button>
-          <button v-if="inputTodos[index].timer === 'going'" @click="timerStop(index)">ストップ</button>
-        </li>
-        <li><button @click="deleteItem(index)">削除</button></li>
-      </ul>
+      <div style="position:relative;width:200px;height:200px;margin:15px">
+        <div style="position:absolute;z-index:10000;width:200px;height:200px;display: flex; justify-content: center;align-items: center;text-align: center;font-size:20px;font-weight: bold;">
+         
+          <div>
+            <li style="height:20px">{{todo.task}}</li>
+            <li style="height:20px">
+                {{ ((todo.time / 1000) - (todo.time / 1000  % 60)) / 60 }}分{{ todo.time / 1000 % 60 }}秒
+            </li>
+            <li style="height:30px;padding: 5px">
+              <button v-if="inputTodos[index].timer === 'stop'" @click="timerStart(index)">開始</button>
+              <button v-if="inputTodos[index].timer === 'going'" @click="timerStop(index)">ストップ</button>
+            </li>
+            <li style="height:30px;padding: 5px"><button @click="deleteItem(index)">削除</button></li>
+          </div>
+        </div>
+
+        <div class="square" style="right:0">
+          <div class="square" style="right:100%;transform-origin: 100% 50%;" :style="rightAngle(index)">
+            <div class="circle" style="left:0;"></div>
+          </div>
+        </div>
+
+        <div class="square" style="left:0;">
+          <div class="square" style="left:100%;transform-origin: 0% 50%;" :style="leftAngle(index)">
+            <div class="circle" style="right:0;"></div>
+          </div>
+        </div>
+
       </div>
-
-
-      <div v-if="radioState === 'working'">
-      <ul v-for="(todo, index) in inputTodos" :key="todo.task">
-        <li v-if="todo.state === 'working'">{{index}}</li>
-        <li v-if="todo.state === 'working'">{{todo.task}}</li>
-        <li v-if="todo.state === 'working'">
-            {{ ((todo.time / 1000) - (todo.time / 1000  % 60)) / 60 }}分{{ todo.time / 1000 % 60 }}秒
-        </li>
-        <li v-if="todo.state === 'working'">
-          <button v-if="inputTodos[index].state === 'working'" @click="changeState(index)">作業中</button>
-          <button v-else @click="changeState(index)">完了</button>
-        </li>
-        <li v-if="todo.state === 'working'"><button @click="deleteItem(index)">削除</button></li>
-      </ul>
-      </div>
-
-
-      <div v-if="radioState === 'finish'">
-      <ul v-for="(todo, index) in inputTodos" :key="todo.task">
-        <li v-if="todo.state === 'finish'">{{index}}</li>
-        <li v-if="todo.state === 'finish'">{{todo.task}}</li>
-        <li v-if="todo.state === 'finish'">
-            {{ ((todo.time / 1000) - (todo.time / 1000  % 60)) / 60 }}分{{ todo.time / 1000 % 60 }}秒
-        </li>
-        <li v-if="todo.state === 'finish'">
-          <button v-if="inputTodos[index].state === 'working'" @click="changeState(index)">作業中</button>
-          <button v-else @click="changeState(index)">完了</button>
-        </li>
-        <li  v-if="todo.state === 'finish'"><button @click="deleteItem(index)">削除</button></li>
-      </ul>
-      </div>
-    </div>
-    </div>
-
+    </ul>
 
     <form @submit.prevent="addTodo">
-      <input type="text" v-model="newTodo">
+      <input type="text" v-model="newTodo" placeholder="入力してください">
         <select id="time" v-model="newTime">
           <option disabled value="">選択してください</option>
           <option value="300000">5分</option>
@@ -66,7 +45,7 @@
         </select>
       <input type="submit" value="追加">
     </form>
-  
+    
   </div>
 </template>
 
@@ -78,26 +57,47 @@
         newTime: '',
         timerState: '',
         radioState: 'all',
-        start: 'ture',
       }
     },
     computed: {
       inputTodos() {
-      return this.$store.getters.inputTodos;
+        return this.$store.getters.inputTodos;
       },
-      styles () {
-        return {
-          '--color': this.color,
-          '--width': this.width,
-          '--timerCount': this.inputTodos.time,
+      remainingTime() {
+        return function(index) {
+          return this.inputTodos[index].time;
         }
-      }
+      },
+      currentAngle() {
+        return function(index) {
+          return (360 - (this.remainingTime(index)/this.inputTodos[index].setTime) * 360);
+        }
+      },
+      rightAngle() {
+        return function(index) {
+          let angle = Math.min(this.currentAngle(index), 180);
+          return {
+            "transform": "rotate(" + angle + "deg)",
+        }
+        }
+      },
+      leftAngle() {
+        return function(index) {
+          let angle = Math.min(Math.max(this.currentAngle(index)-180, 0),180);
+          return {
+            "transform": "rotate(" + angle + "deg)",
+        }
+        }
+      },
     },
     methods: {
-      addTodo: function() {
-        let Item = {task: this.newTodo, state: "working", time: this.newTime, timer: 'stop'}
+      addTodo: function() { 
+        let Item = {task: this.newTodo, state: "working", time: this.newTime, setTime: this.newTime, timer: 'stop'}
         this.inputTodos.push(Item);
         this.newTodo = '';
+        this.newTime = '';
+        document.documentElement.style.setProperty('--timerCountAfterColor', '#999')
+        document.documentElement.style.setProperty('--timerCountBeforeColor', '#999')
       },
       deleteItem: function(index) {
         this.inputTodos.splice(index,1)
@@ -114,98 +114,48 @@
         const todosData = this.inputTodos[index];
         todosData.func = setInterval(function() {
           todosData.time -= 1000;
+          const x = 360 -  ((todosData.time)/(todosData.setTime)) * 360;
+          const y = 180 -  ((todosData.time)/((todosData.setTime) / 2)) * 180;
+          if (x <= 180) {
+            document.documentElement.style.setProperty('--timerCountAfter', `${x}`);
+          } else {
+            document.documentElement.style.setProperty('--timerCountAfter', '0')
+            document.documentElement.style.setProperty('--timerCountAfterColor', '#333')
+            document.documentElement.style.setProperty('--timerCountBefore', `${y}`);
+          }
           if (todosData.time < 0) {
             clearInterval(todosData.func);
             todosData.timer = 'stop';
             alert(`${todosData.task}の終了時刻となりました`)
             todosData.time = '300000'
+            document.documentElement.style.setProperty('--timerCountAfterColor', '#999')
+            document.documentElement.style.setProperty('--timerCountBefore', '0');
           }
         }.bind(this),1000);
       },
       timerStop: function(index) {
         this.inputTodos[index].timer = 'stop';
         clearInterval(this.inputTodos[index].func);
-      }
+      },
     }
   }
 </script>
 
 <style scoped>
-  .circle {
-    --color: #333;
-    --width: 100px;
-    position: relative;
-    width: 250px;
-    height: 250px;
-    background: var(--color);
-    border-radius: 50%;
-    text-align: center;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.circle::before {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0px;
-    left: -125px;
-    width: 250px;
-    height: 250px;
-    background: #999;
-    transform-origin: right 125px;
-    z-index: 2;
-    animation: rotate-circle-left 2s linear forwards;
-}
-
-.circle::after {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0px;
-    left: 125px;
-    width: 250px;
-    height: 250px;
-    background: #999;
-    transform-origin: left 125px;
-    z-index: 3;
-    animation: rotate-circle-right 2s linear forwards;
-}
-
-.circle .circle-inner {
-    position: absolute;
-    top: 25px;
-    left: 25px;
+  .square{
+    position:absolute;
+    width:100px;
+    height:200px;
+    overflow:hidden;
+  }
+  .circle{
+    position:absolute;
     width: 200px;
     height: 200px;
-    padding-top: 38px;
-    background: #fff;
     border-radius: 50%;
-    z-index: 4;
-}
+    /*background-color: green;*/
+    border:10px solid green;
+    box-sizing: border-box;
+  }
 
-@keyframes rotate-circle-right {
-    0%   {
-        transform: rotate(0deg);
-        background: #999;
-    }
-    50%  {
-        transform: rotate(180deg);
-        background: #999;
-    }
-    50.01% {
-        transform: rotate(360deg);
-        background: #333;
-    }
-    100% {
-        transform: rotate(360deg);
-        background: #333;
-    }
-}
-
-@keyframes rotate-circle-left {
-    0%   { transform: rotate(0deg); }
-    50%  { transform: rotate(0deg); }
-    100% { transform: rotate(180deg); }
-}
 </style>
