@@ -1,5 +1,6 @@
 <template>
 <div style="padding-left: 500px">
+  
     <input type="radio" id="all" value="all" v-model="radioState">全て
     <input type="radio" id="working" value="working" v-model="radioState">作業中
     <input type="radio" id="finish" value="finish" v-model="radioState">完了
